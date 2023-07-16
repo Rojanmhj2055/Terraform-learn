@@ -57,3 +57,43 @@ resource "aws_route_table" "my-app-route" {
     Name="${var.env_prefix}-rtb"
   }
 }
+
+## associate route table with our subnet
+resource "aws_route_table_association" "a-rtb-subnet" {
+  subnet_id = aws_subnet.my-app-subnet-1.id
+  route_table_id = aws_route_table.my-app-route.id
+
+}
+
+# Security Group and Firewall for EC2 instance
+#open port22 for ssh and port 8080 for nginx
+
+resource "aws_security_group" "my-app-sg" {
+  name="myapp-sg"
+  description = "Allow ssh and nginx"
+  vpc_id = aws_vpc.myapp-vpc.id
+  
+  ingress  {
+        from_port = 22
+        to_port = 22
+        protocol = "tcp"
+        cidr_blocks = [aws_vpc.myapp-vpc.id]
+  }
+  ingress{
+    from_port = 8080
+    to_port = 8080
+    protocol = "tcp"
+    cidr_blocks =["0.0.0.0/0"]
+  }
+
+  egress {
+    from_port = 0
+    to_port = 0
+    protocol = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+    prefix_list_ids = []
+  }
+  tags = {
+    Name="${var.env_prefix}-sg"
+  }
+}
