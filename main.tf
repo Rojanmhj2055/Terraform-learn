@@ -14,6 +14,9 @@ variable "env_prefix"{
 
 }
 
+variable "my_public_key" {
+  
+}
 variable "vpc_cidr_block" {
   
 }
@@ -21,7 +24,8 @@ variable "subnet_cidr_blocks" {
 }
 
 variable "avail_zone" {}
-
+variable "instance_type" {  
+}
 resource "aws_vpc" "myapp-vpc" {
   cidr_block = var.vpc_cidr_block
   tags = {
@@ -95,5 +99,28 @@ resource "aws_security_group" "my-app-sg" {
   }
   tags = {
     Name="${var.env_prefix}-sg"
+  }
+}
+
+# AWS EC2 instance
+data "aws_ami" "linux" {
+  most_recent = true
+  owners = [ "amazon" ]
+}
+resource "aws_key_pair" "deployer" {
+  key_name = "deployer-key"
+  public_key = var.my_public_key
+}
+
+resource "aws_instance" "myapp-server" {
+  ami = data.aws_ami.linux
+  instance_type = var.instance_type
+  subnet_id = aws_subnet.my-app-subnet-1.id
+  vpc_security_group_ids = [aws_security_group.my-app-sg.id]
+  availability_zone = var.avail_zone
+  associate_public_ip_address = true
+  key_name = aws_key_pair.deployer
+  tags={
+    Name="${var.env_prefix}-servers"
   }
 }
