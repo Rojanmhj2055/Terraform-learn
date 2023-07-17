@@ -112,6 +112,8 @@ resource "aws_key_pair" "deployer" {
   public_key = var.my_public_key
 }
 
+#ssh into this instance
+# ssh -i ~/.ssh/id_rsa <ip_address>
 resource "aws_instance" "myapp-server" {
   ami = data.aws_ami.linux
   instance_type = var.instance_type
