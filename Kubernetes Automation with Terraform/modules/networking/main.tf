@@ -92,7 +92,7 @@ resource "aws_route_table" "publicRT" {
     gateway_id = aws_internet_gateway.igw.id
   }
   tags = {
-    Name ="${var.env_prfix}-public-RT"
+    Name ="${var.env_prefix}-public-RT"
   }
 }
 
@@ -105,7 +105,7 @@ resource "aws_route_table" "privateRT" {
   }
 
   tags={
-    Name="${var.env_prfix}-private-RT"
+    Name="${var.env_prefix}-private-RT"
   }
 }
 

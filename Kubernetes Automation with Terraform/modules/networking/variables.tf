@@ -8,7 +8,7 @@ variable "subnet_cidr_blocks" {
     type = list(string)
 
     validation {
-      condition = length(var.subnet_cidr_blocks>3)
+      condition = length(var.subnet_cidr_blocks)>3
       error_message = "Must have 4 subnet cidr blocks"
     }
 }
