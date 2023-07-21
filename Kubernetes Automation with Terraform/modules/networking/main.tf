@@ -2,7 +2,7 @@ resource "aws_vpc" "myapp-vpc" {
   cidr_block = var.vpc_cidr_block
 
   tags={
-    "Name"="${var.env_prefix}-vpc"
+    Name="${var.env_prefix}-vpc"
 
   }
 }
@@ -10,7 +10,7 @@ resource "aws_vpc" "myapp-vpc" {
 resource "aws_internet_gateway" "igw" {
   vpc_id = aws_vpc.myapp-vpc.id
   tags={
-    "Name"="${var.env_prefix}-igw"
+    Name="${var.env_prefix}-igw"
   }
 }
 
@@ -20,7 +20,7 @@ resource "aws_subnet" "private-us-west-1a" {
   cidr_block = var.subnet_cidr_blocks[0]
   availability_zone = var.avail_zone
   tags = {
-    "Name"="${var.env_prefix}-private-subnet-01"
+    Name="${var.env_prefix}-private-subnet-01"
     "kubernetes.io/role/internal-elb" = "1"
     "kubernetes.io/cluster/demo" ="owned"
   }
@@ -31,7 +31,7 @@ resource "aws_subnet" "private-us-west-1b" {
   cidr_block = var.subnet_cidr_blocks[1]
   availability_zone = "us-west-1b"
   tags = {
-   "Name"="${var.env_prefix}-private-subnet-02"
+   Name="${var.env_prefix}-private-subnet-02"
     "kubernetes.io/role/internal-elb" = "1"
     "kubernetes.io/cluster/demo"="owned"
   }
@@ -44,7 +44,7 @@ resource "aws_subnet" "public-us-west-1a" {
   availability_zone = "us-west-1a"
   map_public_ip_on_launch = true
   tags = {
-    "Name"="${var.env_prefix}-public-us-west-1a"
+    Name="${var.env_prefix}-public-us-west-1a"
     "kubernetes.io/role/elb" = "1"
     "kubernetes.io/cluster/demo" ="owned"
   }
@@ -56,7 +56,7 @@ resource "aws_subnet" "public-us-west-1b" {
   availability_zone = "us-west-1b"
   map_public_ip_on_launch = true
   tags = {
-    "Name"="${var.env_prefix}-public-us-west-1b"
+    Name="${var.env_prefix}-public-us-west-1b"
     "kubernetes.io/role/elb" = "1"
     "kubernetes.io/cluster/demo" ="owned"
   }
@@ -66,7 +66,7 @@ resource "aws_subnet" "public-us-west-1b" {
 resource "aws_eip" "nat" {
   vpc = true
   tags={
-    "Name"="nat"
+    Name="nat"
   }
 }
 
@@ -75,7 +75,7 @@ resource "aws_nat_gateway" "nat" {
   subnet_id = aws_subnet.public-us-west-1a.id
   allocation_id = aws_eip.nat.id
   tags = {
-    "Name" = "${var.env_prefix}-nat-gateway"
+    Name = "${var.env_prefix}-nat-gateway"
   }
 
   ## this is for proper ordeting. recommended from terraform
@@ -83,3 +83,49 @@ resource "aws_nat_gateway" "nat" {
 }
 
 ## Routing goes here
+## Routing Table
+resource "aws_route_table" "publicRT" {
+  vpc_id = aws_vpc.myapp-vpc.id
+  //Public to internet gateway
+  route {
+    cidr_block = "0.0.0.0/0"
+    gateway_id = aws_internet_gateway.igw.id
+  }
+  tags = {
+    Name ="${var.env_prfix}-public-RT"
+  }
+}
+
+resource "aws_route_table" "privateRT" {
+  vpc_id = aws_vpc.myapp-vpc.id
+
+  route{
+    cidr_block = "0.0.0.0/0"
+    nat_gateway_id = aws_nat_gateway.nat.id
+  }
+
+  tags={
+    Name="${var.env_prfix}-private-RT"
+  }
+}
+
+
+resource "aws_route_table_association" "private-us-west-1a" {
+  subnet_id = aws_subnet.private-us-west-1a.id
+  route_table_id = aws_route_table.privateRT.id
+}
+
+resource "aws_route_table_association" "private-us-west-1b" {
+  subnet_id = aws_subnet.private-us-west-1b.id
+  route_table_id = aws_route_table.privateRT.id
+}
+
+resource "aws_route_table_association" "public-us-west-1a" {
+  subnet_id = aws_subnet.public-us-west-1a.id
+  route_table_id = aws_route_table.publicRT.id
+}
+
+resource "aws_route_table_association" "public-us-west-1b" {
+  subnet_id = aws_subnet.public-us-west-1b.id
+  route_table_id = aws_route_table.publicRT.id
+}
